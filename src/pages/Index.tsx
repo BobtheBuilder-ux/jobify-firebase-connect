@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
@@ -9,7 +8,6 @@ import JobCard from '@/components/ui/JobCard';
 import { useAuth } from '@/context/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
-
 interface Job {
   id: string;
   title: string;
@@ -24,40 +22,25 @@ interface Job {
   createdAt: Date;
   deadline: Date;
 }
-
 const Index = () => {
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>([]);
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const { currentUser } = useAuth();
-
+  const {
+    currentUser
+  } = useAuth();
   useEffect(() => {
     const fetchJobs = async () => {
       try {
         // Featured jobs query (example criteria: salary above 80k)
-        const featuredQuery = query(
-          collection(db, 'jobs'),
-          where('status', '==', 'active'),
-          where('salary.min', '>=', 80000),
-          orderBy('salary.min', 'desc'),
-          limit(3)
-        );
+        const featuredQuery = query(collection(db, 'jobs'), where('status', '==', 'active'), where('salary.min', '>=', 80000), orderBy('salary.min', 'desc'), limit(3));
 
         // Recent jobs query
-        const recentQuery = query(
-          collection(db, 'jobs'),
-          where('status', '==', 'active'),
-          orderBy('createdAt', 'desc'),
-          limit(6)
-        );
-
-        const [featuredSnapshot, recentSnapshot] = await Promise.all([
-          getDocs(featuredQuery),
-          getDocs(recentQuery)
-        ]);
+        const recentQuery = query(collection(db, 'jobs'), where('status', '==', 'active'), orderBy('createdAt', 'desc'), limit(6));
+        const [featuredSnapshot, recentSnapshot] = await Promise.all([getDocs(featuredQuery), getDocs(recentQuery)]);
 
         // Process featured jobs
-        const featuredJobsData: Job[] = featuredSnapshot.docs.map((doc) => {
+        const featuredJobsData: Job[] = featuredSnapshot.docs.map(doc => {
           const data = doc.data();
           return {
             id: doc.id,
@@ -68,7 +51,7 @@ const Index = () => {
         });
 
         // Process recent jobs
-        const recentJobsData: Job[] = recentSnapshot.docs.map((doc) => {
+        const recentJobsData: Job[] = recentSnapshot.docs.map(doc => {
           const data = doc.data();
           return {
             id: doc.id,
@@ -77,7 +60,6 @@ const Index = () => {
             deadline: data.deadline?.toDate() || new Date()
           } as Job;
         });
-
         setFeaturedJobs(featuredJobsData);
         setRecentJobs(recentJobsData);
       } catch (error) {
@@ -85,7 +67,7 @@ const Index = () => {
         toast({
           title: 'Error',
           description: 'Failed to load job listings',
-          variant: 'destructive',
+          variant: 'destructive'
         });
       } finally {
         setLoading(false);
@@ -93,104 +75,92 @@ const Index = () => {
     };
 
     // For now, set sample data
-    setFeaturedJobs([
-      {
-        id: '1',
-        title: 'Senior Frontend Developer',
-        company: 'TechCorp',
-        location: 'Remote',
-        type: 'remote',
-        salary: {
-          min: 95000,
-          max: 125000,
-          currency: '$'
-        },
-        createdAt: new Date('2025-05-05'),
-        deadline: new Date('2025-06-05')
+    setFeaturedJobs([{
+      id: '1',
+      title: 'Senior Frontend Developer',
+      company: 'TechCorp',
+      location: 'Remote',
+      type: 'remote',
+      salary: {
+        min: 95000,
+        max: 125000,
+        currency: '$'
       },
-      {
-        id: '2',
-        title: 'Full Stack Engineer',
-        company: 'WebSolutions',
-        location: 'New York, NY',
-        type: 'hybrid',
-        salary: {
-          min: 105000,
-          max: 140000,
-          currency: '$'
-        },
-        createdAt: new Date('2025-05-10'),
-        deadline: new Date('2025-06-10')
+      createdAt: new Date('2025-05-05'),
+      deadline: new Date('2025-06-05')
+    }, {
+      id: '2',
+      title: 'Full Stack Engineer',
+      company: 'WebSolutions',
+      location: 'New York, NY',
+      type: 'hybrid',
+      salary: {
+        min: 105000,
+        max: 140000,
+        currency: '$'
       },
-      {
-        id: '3',
-        title: 'DevOps Engineer',
-        company: 'CloudTech',
-        location: 'San Francisco, CA',
-        type: 'onsite',
-        salary: {
-          min: 120000,
-          max: 160000,
-          currency: '$'
-        },
-        createdAt: new Date('2025-05-12'),
-        deadline: new Date('2025-06-15')
-      }
-    ]);
-
-    setRecentJobs([
-      {
-        id: '4',
-        title: 'UI/UX Designer',
-        company: 'DesignStudio',
-        location: 'Remote',
-        type: 'remote',
-        salary: {
-          min: 85000,
-          max: 110000,
-          currency: '$'
-        },
-        createdAt: new Date('2025-05-15'),
-        deadline: new Date('2025-06-20')
+      createdAt: new Date('2025-05-10'),
+      deadline: new Date('2025-06-10')
+    }, {
+      id: '3',
+      title: 'DevOps Engineer',
+      company: 'CloudTech',
+      location: 'San Francisco, CA',
+      type: 'onsite',
+      salary: {
+        min: 120000,
+        max: 160000,
+        currency: '$'
       },
-      {
-        id: '5',
-        title: 'React Native Developer',
-        company: 'MobileApps',
-        location: 'Austin, TX',
-        type: 'hybrid',
-        salary: {
-          min: 90000,
-          max: 120000,
-          currency: '$'
-        },
-        createdAt: new Date('2025-05-16'),
-        deadline: new Date('2025-06-16')
+      createdAt: new Date('2025-05-12'),
+      deadline: new Date('2025-06-15')
+    }]);
+    setRecentJobs([{
+      id: '4',
+      title: 'UI/UX Designer',
+      company: 'DesignStudio',
+      location: 'Remote',
+      type: 'remote',
+      salary: {
+        min: 85000,
+        max: 110000,
+        currency: '$'
       },
-      {
-        id: '6',
-        title: 'Backend Engineer',
-        company: 'DataStream',
-        location: 'Chicago, IL',
-        type: 'onsite',
-        salary: {
-          min: 100000,
-          max: 135000,
-          currency: '$'
-        },
-        createdAt: new Date('2025-05-17'),
-        deadline: new Date('2025-06-17')
-      }
-    ]);
-    
+      createdAt: new Date('2025-05-15'),
+      deadline: new Date('2025-06-20')
+    }, {
+      id: '5',
+      title: 'React Native Developer',
+      company: 'MobileApps',
+      location: 'Austin, TX',
+      type: 'hybrid',
+      salary: {
+        min: 90000,
+        max: 120000,
+        currency: '$'
+      },
+      createdAt: new Date('2025-05-16'),
+      deadline: new Date('2025-06-16')
+    }, {
+      id: '6',
+      title: 'Backend Engineer',
+      company: 'DataStream',
+      location: 'Chicago, IL',
+      type: 'onsite',
+      salary: {
+        min: 100000,
+        max: 135000,
+        currency: '$'
+      },
+      createdAt: new Date('2025-05-17'),
+      deadline: new Date('2025-06-17')
+    }]);
     setLoading(false);
 
     // Comment out fetchJobs call for now, since we're using sample data
     // fetchJobs();
   }, []);
-
-  return (
-    <MainLayout>
+  return <MainLayout>
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-job-blue to-job-teal text-white rounded-lg shadow-xl mb-8 py-12 px-6 md:px-12 animate-fade-in">
         <div className="max-w-4xl mx-auto text-center">
@@ -201,23 +171,12 @@ const Index = () => {
             Connect with top employers and discover opportunities that match your skills and aspirations.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button
-              size="lg"
-              className="bg-white text-job-blue hover:bg-gray-100"
-              asChild
-            >
+            <Button size="lg" className="bg-white text-job-blue hover:bg-gray-100" asChild>
               <Link to="/jobs">Browse Jobs</Link>
             </Button>
-            {!currentUser && (
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white text-white hover:bg-white/10"
-                asChild
-              >
-                <Link to="/auth?mode=register">Create Account</Link>
-              </Button>
-            )}
+            {!currentUser && <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10" asChild>
+                <Link to="/auth?mode=register" className="text-white bg-transparent">Create Account</Link>
+              </Button>}
           </div>
         </div>
       </section>
@@ -233,38 +192,22 @@ const Index = () => {
           </Button>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featuredJobs.map((job) => (
-              <JobCard key={job.id} {...job} />
-            ))}
-          </div>
-        )}
+        {loading ? <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-lg"></div>)}
+          </div> : <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {featuredJobs.map(job => <JobCard key={job.id} {...job} />)}
+          </div>}
       </section>
 
       {/* Recent Jobs Section */}
       <section className="mb-8 animate-fade-in">
         <h2 className="text-2xl font-bold mb-6">Recent Jobs</h2>
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-48 bg-gray-100 animate-pulse rounded-lg"></div>
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {recentJobs.map((job) => (
-              <JobCard key={job.id} {...job} />
-            ))}
-          </div>
-        )}
+        {loading ? <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-48 bg-gray-100 animate-pulse rounded-lg"></div>)}
+          </div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {recentJobs.map(job => <JobCard key={job.id} {...job} />)}
+          </div>}
       </section>
 
       {/* Categories Section */}
@@ -273,19 +216,12 @@ const Index = () => {
           <h2 className="text-2xl font-bold mb-8 text-center">Browse by Category</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {['Technology', 'Marketing', 'Design', 'Finance', 'Healthcare', 'Engineering', 'Sales', 'Education'].map((category) => (
-              <div 
-                key={category} 
-                className="bg-white p-4 text-center rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer"
-              >
+            {['Technology', 'Marketing', 'Design', 'Finance', 'Healthcare', 'Engineering', 'Sales', 'Education'].map(category => <div key={category} className="bg-white p-4 text-center rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer">
                 <p className="font-medium">{category}</p>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
-    </MainLayout>
-  );
+    </MainLayout>;
 };
-
 export default Index;
