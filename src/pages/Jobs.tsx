@@ -62,7 +62,7 @@ const Jobs = () => {
     };
 
     // For now, set sample data
-    const sampleJobs = [
+    const sampleJobs: Job[] = [
       {
         id: '1',
         title: 'Senior Frontend Developer',

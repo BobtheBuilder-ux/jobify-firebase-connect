@@ -16,7 +16,7 @@ import {
   signInWithPopup,
   updateProfile
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, FieldValue, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 
 interface UserData {
@@ -24,7 +24,7 @@ interface UserData {
   displayName: string | null;
   email: string | null;
   role: 'employer' | 'jobSeeker';
-  createdAt: Date;
+  createdAt: Timestamp | Date;
   profile?: {
     [key: string]: any;
   };
@@ -98,7 +98,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     await setDoc(doc(db, 'users', user.uid), userData);
     
-    setUserData(userData as UserData);
+    // Convert to UserData type with type assertion
+    setUserData({...userData, createdAt: new Date()} as UserData);
   };
 
   // Sign in with email and password
@@ -127,7 +128,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       };
       
       await setDoc(userDocRef, userData);
-      setUserData(userData as UserData);
+      // Convert to UserData type with type assertion
+      setUserData({...userData, createdAt: new Date()} as UserData);
     } else if (userDoc.exists()) {
       setUserData(userDoc.data() as UserData);
     }
