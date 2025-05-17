@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { collection, query, where, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
@@ -14,7 +13,7 @@ import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
-import { eye, edit, trash2 } from 'lucide-react';
+import { Eye, Edit, Trash2 } from 'lucide-react';
 
 interface Job {
   id: string;
