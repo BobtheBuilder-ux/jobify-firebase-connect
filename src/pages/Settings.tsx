@@ -107,7 +107,7 @@ const Settings = () => {
       }
       
       // Update user document in Firestore
-      const userUpdate = {
+      const userUpdate: any = {
         displayName: profile.displayName,
         profile: {
           ...userData?.profile,

@@ -31,13 +31,6 @@ const Jobs = () => {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
-  const [initialFilters, setInitialFilters] = useState({
-    query: '',
-    location: '',
-    jobType: 'all',
-    salaryRange: [0, 200000] as [number, number],
-    category: categoryParam || ''
-  });
 
   useEffect(() => {
     const fetchJobs = async () => {
@@ -259,7 +252,7 @@ const Jobs = () => {
         <h1 className="text-3xl font-bold mb-6">Find Your Next Career Opportunity</h1>
         
         {/* Search Filters */}
-        <SearchFilters onSearch={handleSearch} initialFilters={initialFilters} />
+        <SearchFilters onSearch={handleSearch} />
         
         {/* Job Listings */}
         <div className="mb-8">

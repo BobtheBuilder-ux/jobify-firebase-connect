@@ -1,18 +1,20 @@
 
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { collection, query, where, orderBy, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
 import { useAuth } from '@/context/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
+import { eye, edit, trash2 } from 'lucide-react';
 
 interface Job {
   id: string;
@@ -21,7 +23,8 @@ interface Job {
   location: string;
   createdAt: Date;
   deadline: Date;
-  status: 'active' | 'closed';
+  status: 'active' | 'closed' | 'hired';
+  applications?: number;
 }
 
 interface Application {
@@ -34,6 +37,7 @@ interface Application {
 }
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { currentUser, userData, isEmployer } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<Application[]>([]);
@@ -101,7 +105,8 @@ const Dashboard = () => {
           location: 'Remote',
           createdAt: new Date('2025-05-05'),
           deadline: new Date('2025-06-05'),
-          status: 'active'
+          status: 'active',
+          applications: 4
         },
         {
           id: '2',
@@ -110,7 +115,8 @@ const Dashboard = () => {
           location: 'New York, NY',
           createdAt: new Date('2025-05-01'),
           deadline: new Date('2025-05-30'),
-          status: 'active'
+          status: 'active',
+          applications: 6
         },
         {
           id: '3',
@@ -119,7 +125,8 @@ const Dashboard = () => {
           location: 'Remote',
           createdAt: new Date('2025-04-15'),
           deadline: new Date('2025-05-15'),
-          status: 'closed'
+          status: 'hired',
+          applications: 8
         }
       ]);
     } else {
@@ -171,12 +178,62 @@ const Dashboard = () => {
     return <Navigate to="/auth?mode=login" />;
   }
 
+  const handleStatusChange = async (jobId: string, newStatus: string) => {
+    try {
+      // In a real application, update the status in Firestore
+      // await updateDoc(doc(db, 'jobs', jobId), {
+      //   status: newStatus
+      // });
+
+      // For now, update the local state
+      setJobs(jobs.map(job => 
+        job.id === jobId ? { ...job, status: newStatus as any } : job
+      ));
+
+      toast({
+        title: "Success",
+        description: `Job status has been updated to ${newStatus}`,
+      });
+    } catch (error) {
+      console.error('Error updating job status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update job status",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const deleteApplication = async (applicationId: string) => {
+    try {
+      // In a real application, delete the application from Firestore
+      // await deleteDoc(doc(db, 'applications', applicationId));
+
+      // For now, update the local state
+      setApplications(applications.filter(app => app.id !== applicationId));
+
+      toast({
+        title: "Success",
+        description: "Application has been removed",
+      });
+    } catch (error) {
+      console.error('Error deleting application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete application",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
         return <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Active</Badge>;
       case 'closed':
         return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200">Closed</Badge>;
+      case 'hired':
+        return <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200">Hired</Badge>;
       case 'pending':
         return <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">Pending</Badge>;
       case 'reviewed':
@@ -228,7 +285,23 @@ const Dashboard = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold">12</div>
+                  <div className="text-3xl font-bold">
+                    {jobs.reduce((total, job) => total + (job.applications || 0), 0)}
+                  </div>
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-sm text-primary"
+                    onClick={() => {
+                      // Navigate to a view that shows all applications
+                      // In a real app, this would navigate to a page showing all applications
+                      toast({
+                        title: "Info",
+                        description: "This would show all applications across jobs",
+                      });
+                    }}
+                  >
+                    View all applications
+                  </Button>
                 </CardContent>
               </Card>
               <Card>
@@ -239,6 +312,20 @@ const Dashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">3</div>
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto text-sm text-primary"
+                    onClick={() => {
+                      // Navigate to a view that shows new applications
+                      // In a real app, this would navigate to a page showing new applications
+                      toast({
+                        title: "Info",
+                        description: "This would show new applications",
+                      });
+                    }}
+                  >
+                    View new applications
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -248,9 +335,10 @@ const Dashboard = () => {
               <div className="flex justify-between items-center mb-4">
                 <TabsList>
                   <TabsTrigger value="active">Active Jobs</TabsTrigger>
+                  <TabsTrigger value="hired">Hired</TabsTrigger>
                   <TabsTrigger value="closed">Closed Jobs</TabsTrigger>
                 </TabsList>
-                <Button>Post New Job</Button>
+                <Button onClick={() => navigate('/job/create')}>Post New Job</Button>
               </div>
 
               <TabsContent value="active" className="mt-0">
@@ -267,6 +355,7 @@ const Dashboard = () => {
                             <TableHead>Posted Date</TableHead>
                             <TableHead>Expires</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Applications</TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -279,19 +368,106 @@ const Dashboard = () => {
                                 <TableCell>{job.location}</TableCell>
                                 <TableCell>{format(job.createdAt, 'MMM dd, yyyy')}</TableCell>
                                 <TableCell>{format(job.deadline, 'MMM dd, yyyy')}</TableCell>
-                                <TableCell>{getStatusBadge(job.status)}</TableCell>
+                                <TableCell>
+                                  <Select 
+                                    defaultValue={job.status}
+                                    onValueChange={(value) => handleStatusChange(job.id, value)}
+                                  >
+                                    <SelectTrigger className="w-28">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="active">Active</SelectItem>
+                                      <SelectItem value="closed">Closed</SelectItem>
+                                      <SelectItem value="hired">Hired</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </TableCell>
+                                <TableCell>
+                                  <Button 
+                                    variant="link" 
+                                    className="p-0 h-auto"
+                                    onClick={() => navigate(`/job/${job.id}/applications`)}
+                                  >
+                                    {job.applications || 0} applications
+                                  </Button>
+                                </TableCell>
                                 <TableCell>
                                   <div className="flex space-x-2">
-                                    <Button variant="outline" size="sm">Edit</Button>
-                                    <Button variant="outline" size="sm">View</Button>
+                                    <Button variant="outline" size="sm" onClick={() => navigate(`/job/edit/${job.id}`)}>
+                                      Edit
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => navigate(`/job/${job.id}`)}>
+                                      View
+                                    </Button>
                                   </div>
                                 </TableCell>
                               </TableRow>
                             ))}
                           {jobs.filter(job => job.status === 'active').length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={6} className="text-center py-4">
+                              <TableCell colSpan={7} className="text-center py-4">
                                 No active jobs found
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="hired" className="mt-0">
+                <Card>
+                  <CardContent className="p-0">
+                    {loading ? (
+                      <div className="p-4">Loading...</div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Job Title</TableHead>
+                            <TableHead>Location</TableHead>
+                            <TableHead>Posted Date</TableHead>
+                            <TableHead>Expired</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Applications</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {jobs
+                            .filter(job => job.status === 'hired')
+                            .map(job => (
+                              <TableRow key={job.id}>
+                                <TableCell className="font-medium">{job.title}</TableCell>
+                                <TableCell>{job.location}</TableCell>
+                                <TableCell>{format(job.createdAt, 'MMM dd, yyyy')}</TableCell>
+                                <TableCell>{format(job.deadline, 'MMM dd, yyyy')}</TableCell>
+                                <TableCell>{getStatusBadge(job.status)}</TableCell>
+                                <TableCell>
+                                  <Button 
+                                    variant="link" 
+                                    className="p-0 h-auto"
+                                    onClick={() => navigate(`/job/${job.id}/applications`)}
+                                  >
+                                    {job.applications || 0} applications
+                                  </Button>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-2">
+                                    <Button variant="outline" size="sm" onClick={() => navigate(`/job/${job.id}`)}>
+                                      View
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          {jobs.filter(job => job.status === 'hired').length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-4">
+                                No hired positions found
                               </TableCell>
                             </TableRow>
                           )}
@@ -316,6 +492,7 @@ const Dashboard = () => {
                             <TableHead>Posted Date</TableHead>
                             <TableHead>Expired</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Applications</TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -330,16 +507,29 @@ const Dashboard = () => {
                                 <TableCell>{format(job.deadline, 'MMM dd, yyyy')}</TableCell>
                                 <TableCell>{getStatusBadge(job.status)}</TableCell>
                                 <TableCell>
+                                  <Button 
+                                    variant="link" 
+                                    className="p-0 h-auto"
+                                    onClick={() => navigate(`/job/${job.id}/applications`)}
+                                  >
+                                    {job.applications || 0} applications
+                                  </Button>
+                                </TableCell>
+                                <TableCell>
                                   <div className="flex space-x-2">
-                                    <Button variant="outline" size="sm">Repost</Button>
-                                    <Button variant="outline" size="sm">View</Button>
+                                    <Button variant="outline" size="sm" onClick={() => handleStatusChange(job.id, 'active')}>
+                                      Reactivate
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => navigate(`/job/${job.id}`)}>
+                                      View
+                                    </Button>
                                   </div>
                                 </TableCell>
                               </TableRow>
                             ))}
                           {jobs.filter(job => job.status === 'closed').length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={6} className="text-center py-4">
+                              <TableCell colSpan={7} className="text-center py-4">
                                 No closed jobs found
                               </TableCell>
                             </TableRow>
@@ -433,7 +623,23 @@ const Dashboard = () => {
                             <TableCell>{format(application.submittedAt, 'MMM dd, yyyy')}</TableCell>
                             <TableCell>{getStatusBadge(application.status)}</TableCell>
                             <TableCell>
-                              <Button variant="outline" size="sm">View</Button>
+                              <div className="flex space-x-2">
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  onClick={() => navigate(`/job/${application.jobId}`)}
+                                >
+                                  View
+                                </Button>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => deleteApplication(application.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))
@@ -459,7 +665,9 @@ const Dashboard = () => {
                 <p className="text-gray-500">
                   Based on your profile and application history, we'll show you personalized job recommendations.
                 </p>
-                <Button className="mt-4" variant="outline">Complete Your Profile</Button>
+                <Button className="mt-4" variant="outline" onClick={() => navigate('/settings')}>
+                  Complete Your Profile
+                </Button>
               </CardContent>
             </Card>
           </div>

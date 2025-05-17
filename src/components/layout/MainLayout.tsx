@@ -3,7 +3,7 @@ import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-import { LogOut, User, Briefcase, Home, Calendar } from 'lucide-react';
+import { LogOut, User, Briefcase, Home, Calendar, Settings } from 'lucide-react';
 
 interface MainLayoutProps {
   children: ReactNode;
@@ -101,6 +101,15 @@ const MainLayout = ({ children }: MainLayoutProps) => {
                       <span className="hidden md:inline">
                         {isEmployer ? 'Manage Jobs' : 'Applications'}
                       </span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link 
+                      to="/settings" 
+                      className={`flex items-center space-x-2 p-2 rounded-md transition-colors ${isActive('/settings')}`}
+                    >
+                      <Settings className="w-5 h-5" />
+                      <span className="hidden md:inline">Settings</span>
                     </Link>
                   </li>
                 </ul>
