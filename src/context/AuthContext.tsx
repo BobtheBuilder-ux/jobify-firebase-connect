@@ -14,9 +14,12 @@ import {
   onAuthStateChanged,
   GoogleAuthProvider,
   signInWithPopup,
-  updateProfile
+  updateProfile,
+  sendSignInLinkToEmail,
+  isSignInWithEmailLink,
+  signInWithEmailLink
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, FieldValue, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 
 interface UserData {
@@ -37,6 +40,8 @@ interface AuthContextType {
   signUp: (email: string, password: string, displayName: string, role: 'employer' | 'jobSeeker') => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithGoogle: (role?: 'employer' | 'jobSeeker') => Promise<void>;
+  sendEmailLink: (email: string, role: 'employer' | 'jobSeeker') => Promise<void>;
+  signInWithEmail: (email: string) => Promise<boolean>;
   logout: () => Promise<void>;
   isEmployer: boolean;
 }
@@ -98,13 +103,73 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     await setDoc(doc(db, 'users', user.uid), userData);
     
-    // Convert to UserData type with type assertion
+    // Convert serverTimestamp to Date for local state
     setUserData({...userData, createdAt: new Date()} as UserData);
   };
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
+  };
+
+  // Send email link for passwordless sign in
+  const sendEmailLink = async (email: string, role: 'employer' | 'jobSeeker') => {
+    // Store the role in localStorage to retrieve it when the user clicks the link
+    localStorage.setItem('emailForSignIn', email);
+    localStorage.setItem('userRole', role);
+    
+    const actionCodeSettings = {
+      url: window.location.origin + '/auth?mode=login',
+      handleCodeInApp: true,
+    };
+    
+    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+  };
+
+  // Sign in with email link
+  const signInWithEmail = async (email: string) => {
+    if (isSignInWithEmailLink(auth, window.location.href)) {
+      // Get role from localStorage
+      const role = localStorage.getItem('userRole') as 'employer' | 'jobSeeker';
+      
+      if (!role) {
+        return false;
+      }
+      
+      try {
+        const { user } = await signInWithEmailLink(auth, email, window.location.href);
+        
+        // Check if user document exists
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+          // Create user document if it doesn't exist
+          const userData = {
+            uid: user.uid,
+            displayName: user.displayName || email.split('@')[0], // Use part of email as display name
+            email: user.email,
+            role,
+            createdAt: serverTimestamp(),
+            profile: {}
+          };
+          
+          await setDoc(userDocRef, userData);
+          // Convert serverTimestamp to Date for local state
+          setUserData({...userData, createdAt: new Date()} as UserData);
+        }
+        
+        // Clear stored email and role
+        localStorage.removeItem('emailForSignIn');
+        localStorage.removeItem('userRole');
+        
+        return true;
+      } catch (error) {
+        console.error("Error signing in with email link", error);
+        return false;
+      }
+    }
+    return false;
   };
 
   // Sign in with Google
@@ -128,7 +193,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       };
       
       await setDoc(userDocRef, userData);
-      // Convert to UserData type with type assertion
+      // Convert serverTimestamp to Date for local state
       setUserData({...userData, createdAt: new Date()} as UserData);
     } else if (userDoc.exists()) {
       setUserData(userDoc.data() as UserData);
@@ -164,6 +229,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signUp,
     signIn,
     signInWithGoogle,
+    sendEmailLink,
+    signInWithEmail,
     logout,
     isEmployer
   };

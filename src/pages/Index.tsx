@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +9,7 @@ import JobCard from '@/components/ui/JobCard';
 import { useAuth } from '@/context/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { toast } from '@/hooks/use-toast';
+
 interface Job {
   id: string;
   title: string;
@@ -22,13 +24,16 @@ interface Job {
   createdAt: Date;
   deadline: Date;
 }
+
 const Index = () => {
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>([]);
   const [recentJobs, setRecentJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const {
     currentUser
   } = useAuth();
+
   useEffect(() => {
     const fetchJobs = async () => {
       try {
@@ -160,6 +165,12 @@ const Index = () => {
     // Comment out fetchJobs call for now, since we're using sample data
     // fetchJobs();
   }, []);
+
+  // Function to navigate to jobs page with category filter
+  const handleCategoryClick = (category: string) => {
+    navigate(`/jobs?category=${category}`);
+  };
+
   return <MainLayout>
       {/* Hero Section */}
       <section className="bg-gradient-to-br from-job-blue to-job-teal text-white rounded-lg shadow-xl mb-8 py-12 px-6 md:px-12 animate-fade-in">
@@ -216,12 +227,22 @@ const Index = () => {
           <h2 className="text-2xl font-bold mb-8 text-center">Browse by Category</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {['Technology', 'Marketing', 'Design', 'Finance', 'Healthcare', 'Engineering', 'Sales', 'Education'].map(category => <div key={category} className="bg-white p-4 text-center rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer">
+            {[
+              'Technology', 'Marketing', 'Design', 'Finance', 
+              'Healthcare', 'Engineering', 'Sales', 'Education'
+            ].map(category => (
+              <div 
+                key={category} 
+                className="bg-white p-4 text-center rounded-lg shadow-sm hover:shadow-md transition-all cursor-pointer"
+                onClick={() => handleCategoryClick(category)}
+              >
                 <p className="font-medium">{category}</p>
-              </div>)}
+              </div>
+            ))}
           </div>
         </div>
       </section>
     </MainLayout>;
 };
+
 export default Index;

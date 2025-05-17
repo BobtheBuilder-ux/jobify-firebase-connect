@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { collection, query, where, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import JobCard from '@/components/ui/JobCard';
@@ -20,23 +21,44 @@ interface Job {
   };
   createdAt: Date;
   deadline: Date;
+  category?: string;
 }
 
 const Jobs = () => {
+  const [searchParams] = useSearchParams();
+  const categoryParam = searchParams.get('category');
+  
   const [jobs, setJobs] = useState<Job[]>([]);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialFilters, setInitialFilters] = useState({
+    query: '',
+    location: '',
+    jobType: 'all',
+    salaryRange: [0, 200000] as [number, number],
+    category: categoryParam || ''
+  });
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const q = query(
+        let jobQuery = query(
           collection(db, 'jobs'),
           where('status', '==', 'active'),
           orderBy('createdAt', 'desc')
         );
+        
+        // Apply category filter if provided
+        if (categoryParam) {
+          jobQuery = query(
+            collection(db, 'jobs'),
+            where('status', '==', 'active'),
+            where('category', '==', categoryParam),
+            orderBy('createdAt', 'desc')
+          );
+        }
 
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(jobQuery);
         const jobsData: Job[] = querySnapshot.docs.map((doc) => {
           const data = doc.data();
           return {
@@ -74,6 +96,7 @@ const Jobs = () => {
           max: 125000,
           currency: '$'
         },
+        category: 'Technology',
         createdAt: new Date('2025-05-05'),
         deadline: new Date('2025-06-05')
       },
@@ -88,6 +111,7 @@ const Jobs = () => {
           max: 140000,
           currency: '$'
         },
+        category: 'Technology',
         createdAt: new Date('2025-05-10'),
         deadline: new Date('2025-06-10')
       },
@@ -102,6 +126,7 @@ const Jobs = () => {
           max: 160000,
           currency: '$'
         },
+        category: 'Engineering',
         createdAt: new Date('2025-05-12'),
         deadline: new Date('2025-06-15')
       },
@@ -116,6 +141,7 @@ const Jobs = () => {
           max: 110000,
           currency: '$'
         },
+        category: 'Design',
         createdAt: new Date('2025-05-15'),
         deadline: new Date('2025-06-20')
       },
@@ -130,6 +156,7 @@ const Jobs = () => {
           max: 120000,
           currency: '$'
         },
+        category: 'Technology',
         createdAt: new Date('2025-05-16'),
         deadline: new Date('2025-06-16')
       },
@@ -144,6 +171,7 @@ const Jobs = () => {
           max: 135000,
           currency: '$'
         },
+        category: 'Technology',
         createdAt: new Date('2025-05-17'),
         deadline: new Date('2025-06-17')
       },
@@ -158,6 +186,7 @@ const Jobs = () => {
           max: 150000,
           currency: '$'
         },
+        category: 'Marketing',
         createdAt: new Date('2025-05-15'),
         deadline: new Date('2025-06-18')
       },
@@ -172,26 +201,36 @@ const Jobs = () => {
           max: 155000,
           currency: '$'
         },
+        category: 'Technology',
         createdAt: new Date('2025-05-14'),
         deadline: new Date('2025-06-19')
       }
     ];
 
     setJobs(sampleJobs);
-    setFilteredJobs(sampleJobs);
+    
+    // Filter by category if specified in URL
+    if (categoryParam) {
+      const filtered = sampleJobs.filter(job => job.category === categoryParam);
+      setFilteredJobs(filtered);
+    } else {
+      setFilteredJobs(sampleJobs);
+    }
+    
     setLoading(false);
 
     // Comment out fetchJobs call for now, since we're using sample data
     // fetchJobs();
-  }, []);
+  }, [categoryParam]);
 
   const handleSearch = (filters: { 
     query: string; 
     location: string; 
     jobType: string; 
-    salaryRange: [number, number]; 
+    salaryRange: [number, number];
+    category?: string;
   }) => {
-    const { query, location, jobType, salaryRange } = filters;
+    const { query, location, jobType, salaryRange, category } = filters;
     
     const filtered = jobs.filter((job) => {
       const matchQuery = !query || 
@@ -206,7 +245,9 @@ const Jobs = () => {
       const matchSalary = job.salary.min >= salaryRange[0] && 
         job.salary.max <= salaryRange[1];
       
-      return matchQuery && matchLocation && matchType && matchSalary;
+      const matchCategory = !category || category === '' || job.category === category;
+      
+      return matchQuery && matchLocation && matchType && matchSalary && matchCategory;
     });
     
     setFilteredJobs(filtered);
@@ -218,7 +259,7 @@ const Jobs = () => {
         <h1 className="text-3xl font-bold mb-6">Find Your Next Career Opportunity</h1>
         
         {/* Search Filters */}
-        <SearchFilters onSearch={handleSearch} />
+        <SearchFilters onSearch={handleSearch} initialFilters={initialFilters} />
         
         {/* Job Listings */}
         <div className="mb-8">
