@@ -69,11 +69,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const fetchUserData = async (user: User) => {
     if (!user) return null;
     
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    if (userDoc.exists()) {
-      return userDoc.data() as UserData;
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (userDoc.exists()) {
+        return userDoc.data() as UserData;
+      } else {
+        console.log('No user document found for:', user.uid);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
     }
     
     return null;
@@ -86,44 +92,59 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     displayName: string,
     role: 'employer' | 'jobSeeker'
   ) => {
-    const { user } = await createUserWithEmailAndPassword(auth, email, password);
-    
-    // Update user profile with display name
-    await updateProfile(user, { displayName });
-    
-    // Create user document in Firestore
-    const userData = {
-      uid: user.uid,
-      displayName,
-      email: user.email,
-      role,
-      createdAt: serverTimestamp(),
-      profile: {}
-    };
-    
-    await setDoc(doc(db, 'users', user.uid), userData);
-    
-    // Convert serverTimestamp to Date for local state
-    setUserData({...userData, createdAt: new Date()} as UserData);
+    try {
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      
+      // Update user profile with display name
+      await updateProfile(user, { displayName });
+      
+      // Create user document in Firestore
+      const userData = {
+        uid: user.uid,
+        displayName,
+        email: user.email,
+        role,
+        createdAt: serverTimestamp(),
+        profile: {}
+      };
+      
+      await setDoc(doc(db, 'users', user.uid), userData);
+      
+      // Convert serverTimestamp to Date for local state
+      setUserData({...userData, createdAt: new Date()} as UserData);
+    } catch (error) {
+      console.error('Error during sign up:', error);
+      throw error;
+    }
   };
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      console.error('Error during sign in:', error);
+      throw error;
+    }
   };
 
   // Send email link for passwordless sign in
   const sendEmailLink = async (email: string, role: 'employer' | 'jobSeeker') => {
-    // Store the role in localStorage to retrieve it when the user clicks the link
-    localStorage.setItem('emailForSignIn', email);
-    localStorage.setItem('userRole', role);
-    
-    const actionCodeSettings = {
-      url: window.location.origin + '/auth?mode=login',
-      handleCodeInApp: true,
-    };
-    
-    await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    try {
+      // Store the role in localStorage to retrieve it when the user clicks the link
+      localStorage.setItem('emailForSignIn', email);
+      localStorage.setItem('userRole', role);
+      
+      const actionCodeSettings = {
+        url: window.location.origin + '/auth?mode=login',
+        handleCodeInApp: true,
+      };
+      
+      await sendSignInLinkToEmail(auth, email, actionCodeSettings);
+    } catch (error) {
+      console.error('Error sending email link:', error);
+      throw error;
+    }
   };
 
   // Sign in with email link
@@ -174,29 +195,34 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Sign in with Google
   const signInWithGoogle = async (role?: 'employer' | 'jobSeeker') => {
-    const provider = new GoogleAuthProvider();
-    const { user } = await signInWithPopup(auth, provider);
-    
-    // Check if user document exists
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-    
-    if (!userDoc.exists() && role) {
-      // Create user document if it doesn't exist
-      const userData = {
-        uid: user.uid,
-        displayName: user.displayName,
-        email: user.email,
-        role,
-        createdAt: serverTimestamp(),
-        profile: {}
-      };
+    try {
+      const provider = new GoogleAuthProvider();
+      const { user } = await signInWithPopup(auth, provider);
       
-      await setDoc(userDocRef, userData);
-      // Convert serverTimestamp to Date for local state
-      setUserData({...userData, createdAt: new Date()} as UserData);
-    } else if (userDoc.exists()) {
-      setUserData(userDoc.data() as UserData);
+      // Check if user document exists
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
+      
+      if (!userDoc.exists() && role) {
+        // Create user document if it doesn't exist
+        const userData = {
+          uid: user.uid,
+          displayName: user.displayName,
+          email: user.email,
+          role,
+          createdAt: serverTimestamp(),
+          profile: {}
+        };
+        
+        await setDoc(userDocRef, userData);
+        // Convert serverTimestamp to Date for local state
+        setUserData({...userData, createdAt: new Date()} as UserData);
+      } else if (userDoc.exists()) {
+        setUserData(userDoc.data() as UserData);
+      }
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      throw error;
     }
   };
 
@@ -208,8 +234,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       setCurrentUser(user);
       
       if (user) {
-        const data = await fetchUserData(user);
-        setUserData(data);
+        try {
+          const data = await fetchUserData(user);
+          setUserData(data);
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+        }
       } else {
         setUserData(null);
       }
