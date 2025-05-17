@@ -76,7 +76,7 @@ const SearchFilters = ({ onSearch }: SearchFiltersProps) => {
             <SelectValue placeholder="Job Type" />
           </SelectTrigger>
           <SelectContent position="popper">
-            <SelectItem value="">All Types</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="remote">Remote</SelectItem>
             <SelectItem value="hybrid">Hybrid</SelectItem>
             <SelectItem value="onsite">On-site</SelectItem>

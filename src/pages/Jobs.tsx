@@ -201,7 +201,7 @@ const Jobs = () => {
       const matchLocation = !location || 
         job.location.toLowerCase().includes(location.toLowerCase());
       
-      const matchType = !jobType || job.type === jobType;
+      const matchType = !jobType || jobType === 'all' || job.type === jobType;
       
       const matchSalary = job.salary.min >= salaryRange[0] && 
         job.salary.max <= salaryRange[1];
