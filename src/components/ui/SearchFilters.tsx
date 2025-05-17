@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -25,21 +25,44 @@ interface SearchFiltersProps {
     location: string;
     jobType: string;
     salaryRange: [number, number];
+    category?: string;
   }) => void;
+  initialFilters?: {
+    query: string;
+    location: string;
+    jobType: string;
+    salaryRange: [number, number];
+    category?: string;
+  };
 }
 
-const SearchFilters = ({ onSearch }: SearchFiltersProps) => {
-  const [query, setQuery] = useState('');
-  const [location, setLocation] = useState('');
-  const [jobType, setJobType] = useState('');
-  const [salaryRange, setSalaryRange] = useState<[number, number]>([30000, 150000]);
+const SearchFilters = ({ onSearch, initialFilters }: SearchFiltersProps) => {
+  const [query, setQuery] = useState(initialFilters?.query || '');
+  const [location, setLocation] = useState(initialFilters?.location || '');
+  const [jobType, setJobType] = useState(initialFilters?.jobType || '');
+  const [salaryRange, setSalaryRange] = useState<[number, number]>(initialFilters?.salaryRange || [30000, 150000]);
+  const [category, setCategory] = useState(initialFilters?.category || '');
+
+  useEffect(() => {
+    // Update state when initialFilters changes
+    if (initialFilters) {
+      setQuery(initialFilters.query || '');
+      setLocation(initialFilters.location || '');
+      setJobType(initialFilters.jobType || '');
+      setSalaryRange(initialFilters.salaryRange || [30000, 150000]);
+      if (initialFilters.category) {
+        setCategory(initialFilters.category);
+      }
+    }
+  }, [initialFilters]);
 
   const handleSearch = () => {
     onSearch({
       query,
       location,
       jobType,
-      salaryRange
+      salaryRange,
+      category
     });
   };
 
@@ -97,7 +120,7 @@ const SearchFilters = ({ onSearch }: SearchFiltersProps) => {
                 <h4 className="font-medium">Salary Range</h4>
                 <div className="px-1">
                   <Slider
-                    defaultValue={[30000, 150000]}
+                    defaultValue={salaryRange}
                     min={0}
                     max={300000}
                     step={5000}

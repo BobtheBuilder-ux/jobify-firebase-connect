@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -106,11 +105,10 @@ const Settings = () => {
         await updateProfile(currentUser, { photoURL });
       }
       
-      // Update user document in Firestore
+      // Create base profile update
       const userUpdate: any = {
         displayName: profile.displayName,
         profile: {
-          ...userData?.profile,
           title: profile.title,
           location: profile.location,
           bio: profile.bio,
